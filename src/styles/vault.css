@@ -1,0 +1,104 @@
+/* ── File Table Specific ───────────────────────────────────────── */
+.file-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.file-icon.folder {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.file-icon.file {
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+}
+
+.file-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+}
+
+.file-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.file-name:hover {
+  color: var(--accent);
+}
+
+.file-path-hover {
+  display: none;
+}
+
+.file-name-cell:hover .file-path-hover {
+  display: block;
+}
+
+/* ── Upload Progress ───────────────────────────────────────────── */
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 9999px;
+  transition: width 300ms ease;
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: color var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumb-item:hover {
+  color: var(--accent);
+}
+
+.breadcrumb-item.current {
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: default;
+}
+
+.breadcrumb-sep {
+  color: var(--border-strong);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+
+  .topbar {
+    padding: 0 1rem;
+    overflow-x: auto;
+  }
+}

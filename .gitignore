@@ -1,0 +1,69 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Commercial Extension Mounts & Private Addon Repo
+teamvault-commercial/
+/teamvault-commercial/
+/src/app/api/stripe
+/src/app/api/agent
+/src/app/agent
+/src/lib/stripe-billing.ts
+/src/lib/agent-config.ts
+/src/lib/agent-auth.ts
+/src/lib/agent-provisioning.ts
+/src/db/schema.commercial.sql
+/src/db/agent-types.ts
+/src/db/migrations/*agent*
+/src/db/migrations/*stripe*
+/scripts/setup-stripe.ts
+/scripts/mount-extensions.mjs
+/scripts/unmount-extensions.mjs
+*.commercial.*
+
+#Docs
+/docs
+
+/.claude/
+audit.log
+CLAUDE.md 
+/.next/

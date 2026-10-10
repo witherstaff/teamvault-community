@@ -1,0 +1,4 @@
+#!/bin/bash
+eval $(dbus-launch --sh-syntax)
+gnome-keyring-daemon --start --daemonize --components=secrets 2>/dev/null
+exec /path/to/teamvault-drive-linux "$@"

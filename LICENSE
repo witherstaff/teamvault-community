@@ -1,0 +1,62 @@
+Business Source License 1.1
+
+Parameters:
+
+Licensor: 
+    TeamVault, Inc.
+
+Licensed Work: 
+    TeamVault Community Edition (including all source code, documentation, and assets in this repository)
+
+Additional Use Grant:
+    You may use TeamVault Community internally, including in a business, but you may not sell it, offer it as a hosted service, bundle it into a commercial product, or compete with TeamVault’s commercial offering without a commercial license.
+
+Change Date: 
+    Four (4) years from the date of each release.
+
+Change License: 
+    Apache License, Version 2.0
+
+----------------------------------------------------------------------
+TeamVault Community License Summary
+----------------------------------------------------------------------
+
+Permitted:
+- Personal use
+- Internal business use
+- Evaluation and testing
+- Modification and creating derived works for internal use
+- Self-hosting on private or public infrastructure for internal use
+- Contributing bug fixes and enhancements back to the project (subject to the CLA)
+- Noncommercial redistribution of verbatim copies
+
+Not permitted without a commercial license from TeamVault, Inc.:
+- Selling TeamVault or any derivative work
+- Offering TeamVault as Software-as-a-Service (SaaS) or cloud-hosted service
+- Managed hosting of TeamVault for third parties
+- Reselling, sublicensing, or renting TeamVault
+- Incorporating TeamVault into a commercial or competing product
+- Offering paid services where TeamVault itself is the primary value proposition or core product
+
+Commercial rights reserved to TeamVault, Inc.
+To obtain a commercial license, contact licensing@teamvault.cloud.
+
+----------------------------------------------------------------------
+Terms of the Business Source License 1.1
+----------------------------------------------------------------------
+
+The Licensor hereby grants you the right to copy, modify, create derivative works, redistribute, and make non-production use of the Licensed Work. The Licensor also grants you an Additional Use Grant as defined above.
+
+The Licensor guarantees that not later than the Change Date specified above, you will be granted the rights to use the Licensed Work under the Change License specified above. From that date onward, your use of the Licensed Work will be subject to the terms of the Change License.
+
+Notice:
+The above copyright notice, this license document, and the notice that the Licensed Work is subject to the Business Source License must be included in all copies or substantial portions of the Licensed Work.
+
+Modifications:
+You may make modifications to the Licensed Work, provided that any modified versions you distribute remain subject to the terms of this License. You may not remove or alter any copyright notices or license files included in the Licensed Work.
+
+Contributions:
+Any contributions made to the Licensed Work are subject to the TeamVault Contributor License Agreement (CLA.md). By submitting a contribution, you grant TeamVault, Inc. the right to include, license, and distribute your contribution under this License and within TeamVault's proprietary commercial offerings.
+
+DISCLAIMER:
+THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE LICENSOR OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE LICENSED WORK OR THE USE OR OTHER DEALINGS IN THE LICENSED WORK.
