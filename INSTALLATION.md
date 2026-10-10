@@ -130,9 +130,10 @@ The application will start at `http://localhost:3000`.
 
 1. Sign up at [https://supabase.com](https://supabase.com) and click **New Project**.
 2. Select your preferred database region and set a strong database password.
-3. Once provisioned, execute the database migrations:
+3. Once provisioned, execute the database schema:
    - Navigate to **SQL Editor > New query**.
-   - Copy the schema from `supabase/migrations/` in this repository and click **Run**.
+   - Copy the entire contents of `src/db/schema.community.sql` in this repository and click **Run**.
+   - This sets up all 13 core normalized tables, recursive folder traversal functions (`get_all_descendants`), atomic storage tracking procedures (`increment_workspace_storage`), and triggers.
 4. Retrieve your API Keys under **Project Settings > API Keys**:
    > [!IMPORTANT]
    > Supabase is deprecating legacy JWT `service_role` and `anon` keys by late 2026. Use the new Secret Key (`sb_secret_...`) and Publishable Key (`sb_publishable_...`).
