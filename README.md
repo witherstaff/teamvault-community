@@ -31,6 +31,7 @@
 - **Desktop Synchronization:** Native bidirectional background desktop client integration (`TeamVault Drive` for Windows, macOS, and Linux).
 - **Forensic Audit Logging:** Immutable audit ledger recording logins, uploads, downloads, deletions, and administrative actions.
 - **Master Admin Dashboard:** Service-wide operator analytics (`/master-admin`) for managing workspaces, tracking storage quotas, and inspecting system health.
+- **Preflight Environment Checker:** Built-in `/install-check` diagnostic tool to verify all database, storage, and Auth0 variables prior to first login.
 
 ---
 
@@ -126,13 +127,28 @@ npx tsx scripts/check-storage.ts
 npx tsx scripts/set-storage-cors.ts
 ```
 
-### 5. Start the Development Server
+### 5. Verify Setup with `/install-check`
+
+Start the Next.js development server:
 
 ```bash
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000). Sign in via Auth0 to instantly create and access your first vault workspace!
+Before attempting login, open your browser and navigate to:
+👉 **[http://localhost:3000/install-check](http://localhost:3000/install-check)**
+
+The **Installation & Environment Checker** performs an unauthenticated diagnostic audit:
+- ✅ Confirms all required Auth0, Supabase, and S3 variables are configured.
+- 🔍 Detects remaining placeholder values (e.g. `your-tenant`, `your-bucket`).
+- ⚡ Live-tests storage configuration resolution against your bucket.
+- 📋 Provides a 1-click **Copy Missing .env Snippet** to quickly complete any missing fields.
+
+> 🔒 **Security Notice**: Once your deployment is verified and running, add `DISABLE_INSTALL_CHECK=true` to `.env.local` (or your hosting provider) to lock the diagnostic page.
+
+### 6. Log In & Create Workspace
+
+Visit **[http://localhost:3000](http://localhost:3000)** and sign in via Auth0 to access your vault workspace!
 
 ---
 
