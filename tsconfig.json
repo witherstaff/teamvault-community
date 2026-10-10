@@ -42,7 +42,6 @@
     "community/**",
     "teamvault-drive",
     "desktop-client",
-    "TeamVaultDrive",
     "teamvault-commercial"
   ]
 }
