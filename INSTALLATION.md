@@ -324,8 +324,11 @@ rm -rf src/app/install-check src/app/api/install-check
 
 ---
 
-## Deploying to Production (Vercel)
+## Deploying to Production
 
+For full production deployment guides covering **Docker**, **Docker Compose**, **Caddy**, **Nginx**, and **Linux VMs**, see the dedicated [Production Deployment Guide](docs/DEPLOYMENT.md).
+
+### Quickstart: Deploying to Vercel
 1. Push your repository to your private or organization GitHub account.
 2. Go to [https://vercel.com/new](https://vercel.com/new) and import `teamvault-community`.
 3. Under **Environment Variables**, paste the keys from your `.env.local`.

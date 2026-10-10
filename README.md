@@ -195,18 +195,25 @@ src/
 
 ---
 
-## Deploying to Production
+## Documentation
 
-Community Edition can be deployed to any Node.js hosting platform or container environment:
+Comprehensive manuals and architectural documentation are available in the repository:
 
-- **Vercel:** Import your repository, set the environment variables from `.env.example`, and deploy.
-- **Docker / Self-Hosted Server:** Build and run using the standard Next.js production build:
-  ```bash
-  npm run build
-  npm run start
-  ```
+- 📖 **[Installation Manual](INSTALLATION.md)** — Step-by-step setup guide for Auth0, Supabase, Cloudflare R2 / S3, and the `/install-check` diagnostic console.
+- 🏗️ **[Architecture Guide](docs/ARCHITECTURE.md)** — Detailed breakdown of subsystems, component topology, sequence diagrams, and database relational models.
+- 🔒 **[Security Policy & Architecture](docs/SECURITY.md)** — Security posture, zero-trust tenant isolation, dual-key isolation, and vulnerability disclosure policy.
+- 🚀 **[Production Deployment Guide](docs/DEPLOYMENT.md)** — Battle-tested production guides for Docker, Caddy, Vercel, Railway, and Ubuntu/Debian servers.
 
 ---
+
+## Deploying to Production
+
+For full production deployment guides including container orchestration and reverse proxies, see the [Production Deployment Guide](docs/DEPLOYMENT.md).
+
+Quick summary for supported environments:
+- **Vercel:** Import your repository, set the environment variables from `.env.example`, and deploy.
+- **Docker / Container:** Use the production multi-stage Docker build and Caddy configuration detailed in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Self-Hosted Linux VM:** Build and run using the standard Next.js production build (`npm run build && npm run start`) managed via PM2 or systemd.
 
 ---
 

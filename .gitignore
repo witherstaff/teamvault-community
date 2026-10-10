@@ -62,8 +62,8 @@ teamvault-commercial/
 /scripts/unmount-extensions.mjs
 *.commercial.*
 
-#Docs
-/docs
+#Design Docs
+/designdocs
 
 /.claude/
 audit.log
