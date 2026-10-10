@@ -52,7 +52,7 @@
 
 ### Prerequisites
 
-- **Node.js:** 18.18+ or 20+
+- **Node.js:** 20.9+ (Node.js 22 LTS recommended)
 - **Database:** PostgreSQL or a [Supabase](https://supabase.com) project
 - **Authentication:** [Auth0](https://auth0.com) Application (Regular Web Application)
 - **Object Storage:** Any S3-compatible bucket (e.g. Cloudflare R2, AWS S3, Wasabi, or MinIO)

@@ -73,7 +73,7 @@ If you choose to self-host, you can run a production-ready, fully functional ins
 ## Prerequisites
 
 Before beginning, ensure you have installed:
-- **Node.js**: v18.18.0 or v20+ (Node.js 20 LTS recommended)
+- **Node.js**: v20.9+ (Node.js 22 LTS recommended)
 - **npm**: v9+ (bundled with Node.js)
 - **Git**: Installed and configured
 
