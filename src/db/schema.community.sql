@@ -1,7 +1,7 @@
 -- ══════════════════════════════════════════════════════════════════
 -- TeamVault Community Edition — Complete Database Schema
 -- ══════════════════════════════════════════════════════════════════
--- Standalone, open-source schema for self-hosted TeamVault.
+-- Standalone, source-available schema for self-hosted TeamVault.
 -- Run this in your Supabase SQL Editor: https://supabase.com/dashboard
 --
 -- It provides complete multi-user storage, groups,

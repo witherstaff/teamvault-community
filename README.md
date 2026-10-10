@@ -1,6 +1,6 @@
 # TeamVault Community Edition
 
-> **Self-Hosted, Open-Source Team File Vault**  
+> **Self-Hosted, Source-Available Team File Vault — Free for Internal Use**  
 > Secure file collaboration, folder-level access control, geofencing, verified distribution, and desktop synchronization — with zero per-seat licensing fees.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16_App_Router-black?logo=next.js)](https://nextjs.org/)
