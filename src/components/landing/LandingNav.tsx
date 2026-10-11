@@ -51,7 +51,7 @@ export function LandingNav({ user, onStartTrial, isCommercial = true }: LandingN
             <a href="/community" className="btn btn-ghost" style={{ fontSize: '0.875rem' }}>Community</a>
           </>
         ) : (
-          <a href="/" className="btn btn-ghost" style={{ fontSize: '0.875rem' }}>Commercial SaaS</a>
+          <a href="https://teamvault.cloud" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '0.875rem' }}>Commercial SaaS</a>
         )}
         <a href="/tutorial" className="btn btn-ghost" style={{ fontSize: '0.875rem' }}>User Guide</a>
         <a href="/verify" className="btn btn-ghost" style={{ fontSize: '0.875rem' }}>Verify Download</a>
