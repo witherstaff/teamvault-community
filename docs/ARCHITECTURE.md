@@ -34,8 +34,8 @@ graph TD
     end
 
     subgraph Persistence["Persistence & Storage Tier"]
-        DB[(PostgreSQL / Supabase)<br/>13 Normalized Relational Tables]
-        S3Storage[(S3-Compatible Object Storage)<br/>Cloudflare R2 / AWS S3 / Wasabi / MinIO]
+        DB[("PostgreSQL / Supabase<br/>13 Normalized Relational Tables")]
+        S3Storage[("S3-Compatible Object Storage<br/>Cloudflare R2 / AWS S3 / Wasabi / MinIO")]
     end
 
     Browser -->|HTTPS / WSS| ReverseProxy
@@ -120,8 +120,8 @@ sequenceDiagram
     User->>Auth0: Authenticate (Password, SSO, or Social)
     Auth0-->>User: 302 Redirect with Auth Code to /auth/callback
     User->>Next: Exchange Code for Session Cookie
-    Next->>DB: Query or Upsert `users` by auth0_sub
-    Next->>DB: Fetch Active `workspaces` and `memberships`
+    Next->>DB: Query or Upsert users record by auth0_sub
+    Next->>DB: Fetch Active workspaces and memberships
     Next-->>User: 302 Redirect to /vault with HttpOnly Session
 ```
 
@@ -153,8 +153,8 @@ sequenceDiagram
     Client->>S3: PUT /bucket/key (Binary Stream directly to S3)
     S3-->>Client: 200 OK (ETag header)
     Client->>API: POST /api/files/confirm-upload (s3Key, size, hash)
-    API->>DB: Insert into `files` & `file_versions`
-    API->>DB: Insert `FILE_UPLOAD` into `audit_logs`
+    API->>DB: Insert into files and file_versions
+    API->>DB: Insert FILE_UPLOAD into audit_logs
     API-->>Client: 201 Created (File Object)
 ```
 
