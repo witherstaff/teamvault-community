@@ -77,17 +77,25 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                     renames.push({ original: file.name, resolved: resolved_filename })
                 }
 
-                // 2. PUT to R2
+                // 2. PUT to R2 / S3 via presigned URL
                 setProgress(Math.round(overallBaseProgress + (40 / files.length)))
-                const response = await fetch(upload_url, {
-                    method: 'PUT',
-                    body: file,
-                    // Do NOT send any extra headers. The presigned URL handles the signature,
-                    // and browsers handle Content-Type/Length natively with body: file.
-                });
+                let response: Response
+                try {
+                    response = await fetch(upload_url, {
+                        method: 'PUT',
+                        body: file,
+                        // Do NOT send any extra headers. The presigned URL handles the signature,
+                        // and browsers handle Content-Type/Length natively with body: file.
+                    });
+                } catch (fetchErr) {
+                    console.error('[STORAGE PUT ERROR]', fetchErr)
+                    throw new Error(
+                        `Storage upload blocked by browser (CORS or network error). Ensure your Cloudflare R2 / S3 bucket has a CORS policy allowing PUT requests from this domain.`
+                    )
+                }
 
                 if (!response.ok) {
-                    throw new Error(`Upload failed for ${file.name}: ${response.status}`);
+                    throw new Error(`Storage upload failed for ${file.name} (HTTP ${response.status})`);
                 }
 
                 // 2.5. Compute SHA-256 checksum of the uploaded file
