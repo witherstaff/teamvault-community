@@ -55,9 +55,25 @@ export async function POST(req: NextRequest) {
                 }
             }
         } else {
-            // Folder purge: use get_all_descendants to find only files under THIS folder
-            const { data: descendants } = await db.rpc('get_all_descendants', { p_folder_id: object_id })
-            const descendantIds = (descendants ?? []).map((r: { id: string }) => r.id)
+            // Folder purge: use get_all_descendants to find all files under THIS folder
+            let descendantIds: string[] = []
+            try {
+                const { data: descendants, error: rpcErr } = await db.rpc('get_all_descendants', { p_folder_id: object_id })
+                if (!rpcErr && descendants) {
+                    descendantIds = descendants.map((r: { id: string }) => r.id)
+                }
+            } catch {
+                // ignore
+            }
+
+            // Fallback: If RPC is not available, query direct children in this folder
+            if (descendantIds.length === 0) {
+                const { data: directChildren } = await db
+                    .from('vault_objects')
+                    .select('id')
+                    .eq('parent_id', object_id)
+                descendantIds = (directChildren || []).map(c => c.id)
+            }
 
             if (descendantIds.length > 0) {
                 const { data: descendantFiles } = await db
@@ -81,23 +97,35 @@ export async function POST(req: NextRequest) {
                         v.storage_key ? deleteObject(v.storage_key).catch(console.error) : null
                     ),
                 ])
-
-                const currentBytes = (descendantFiles ?? []).reduce((acc, f) => acc + Number(f.size_bytes || 0), 0)
-                const versionBytes = (fileVersions ?? []).reduce((acc, v) => acc + Number(v.size_bytes || 0), 0)
-                const totalFreed = currentBytes + versionBytes
-
-                if (totalFreed > 0) {
-                    const { data: ws } = await db.from('workspaces').select('storage_used_bytes').eq('id', workspace_id).single()
-                    if (ws) {
-                        const newSize = Math.max(0, Number(ws.storage_used_bytes) - totalFreed)
-                        await db.from('workspaces').update({ storage_used_bytes: newSize }).eq('id', workspace_id)
-                    }
-                }
             }
         }
 
         // Hard-delete the DB row — CASCADE removes all descendants and their file_versions
         await db.from('vault_objects').delete().eq('id', object_id)
+
+        // Accurately synchronize workspace storage counter with remaining files
+        const { data: remainingObjects } = await db
+            .from('vault_objects')
+            .select('size_bytes')
+            .eq('workspace_id', workspace_id)
+            .eq('type', 'file')
+            .not('checksum_sha256', 'is', null)
+
+        const remainingObjectBytes = (remainingObjects || []).reduce((acc: number, o: any) => acc + Number(o.size_bytes || 0), 0)
+
+        let remainingVersionBytes = 0
+        try {
+            const { data: remainingVersions } = await db
+                .from('file_versions')
+                .select('size_bytes, vault_objects!inner(workspace_id)')
+                .eq('vault_objects.workspace_id', workspace_id)
+            remainingVersionBytes = (remainingVersions || []).reduce((acc: number, v: any) => acc + Number(v.size_bytes || 0), 0)
+        } catch {
+            // ignore
+        }
+
+        const remainingTotal = remainingObjectBytes + remainingVersionBytes
+        await db.from('workspaces').update({ storage_used_bytes: remainingTotal }).eq('id', workspace_id)
 
         logAuditEvent({
             workspaceId: workspace_id,

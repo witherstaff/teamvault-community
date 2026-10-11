@@ -63,7 +63,7 @@ export default function VaultPage() {
         if (!workspaceId) return
         setLoading(true)
         try {
-            const infoRes = await fetch(`/api/vault/workspace-info?workspace_id=${workspaceId}`)
+            const infoRes = await fetch(`/api/vault/workspace-info?workspace_id=${workspaceId}`, { cache: 'no-store' })
             let info = null
             if (infoRes.ok) {
                 info = await infoRes.json()

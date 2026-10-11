@@ -3,6 +3,8 @@ import { requireSession, requireMembership } from '@/lib/auth'
 import { getAdminClient } from '@/db'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+
 const querySchema = z.object({
     workspace_id: z.string().uuid()
 })
@@ -34,12 +36,46 @@ export async function GET(req: NextRequest) {
             .is('parent_id', null)
             .single()
 
-        return NextResponse.json({
+        // 1. Accurately sum all files currently existing in the workspace (active + recycle bin)
+        const { data: objects } = await db
+            .from('vault_objects')
+            .select('size_bytes')
+            .eq('workspace_id', workspace_id)
+            .eq('type', 'file')
+            .not('checksum_sha256', 'is', null)
+
+        const totalObjectBytes = (objects || []).reduce((acc: number, o: any) => acc + Number(o.size_bytes || 0), 0)
+
+        // 2. Accurately sum historical file versions
+        let totalVersionBytes = 0
+        try {
+            const { data: versions } = await db
+                .from('file_versions')
+                .select('size_bytes, vault_objects!inner(workspace_id)')
+                .eq('vault_objects.workspace_id', workspace_id)
+            totalVersionBytes = (versions || []).reduce((acc: number, v: any) => acc + Number(v.size_bytes || 0), 0)
+        } catch {
+            // ignore if join syntax differs
+        }
+
+        const calculatedStorageUsed = totalObjectBytes + totalVersionBytes
+
+        // 3. Self-heal workspaces.storage_used_bytes in database if it diverged from actual files
+        if (Number(data.storage_used_bytes) !== calculatedStorageUsed) {
+            await db
+                .from('workspaces')
+                .update({ storage_used_bytes: calculatedStorageUsed })
+                .eq('id', workspace_id)
+        }
+
+        const res = NextResponse.json({
             plan_id: data.plan_id,
             storage_limit_bytes: Number(data.storage_limit_bytes),
-            storage_used_bytes: Number(data.storage_used_bytes),
+            storage_used_bytes: calculatedStorageUsed,
             root_folder_id: rootFolder?.id || null
         })
+        res.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate')
+        return res
     } catch (err) {
         if (err instanceof Response) return err
         if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues }, { status: 400 })
