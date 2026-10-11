@@ -35,7 +35,7 @@ export function LandingFooter({ user, onStartTrial, isCommercial = true }: Landi
         {isCommercial ? (
           <>
             <a href="#pricing" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Pricing</a>
-            <a href="/community" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Community Edition</a>
+            <a href="https://github.com/witherstaff/teamvault-community" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Community Edition</a>
           </>
         ) : (
           <a href="https://teamvault.cloud" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Commercial SaaS</a>

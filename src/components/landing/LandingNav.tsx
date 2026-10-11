@@ -48,7 +48,7 @@ export function LandingNav({ user, onStartTrial, isCommercial = true }: LandingN
         {isCommercial ? (
           <>
             <a href="/agent" className="btn btn-ghost" style={{ fontSize: '0.875rem' }}>Agent API</a>
-            <a href="/community" className="btn btn-ghost" style={{ fontSize: '0.875rem' }}>Community</a>
+            <a href="https://github.com/witherstaff/teamvault-community" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '0.875rem' }}>Community</a>
           </>
         ) : (
           <a href="https://teamvault.cloud" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '0.875rem' }}>Commercial SaaS</a>
