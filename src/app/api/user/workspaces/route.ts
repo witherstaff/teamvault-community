@@ -21,9 +21,12 @@ export async function GET(req: NextRequest) {
             .eq('user_id', session.userId)
             .in('status', ['active', 'invited'])
 
-        if (error) throw error
+        if (error) {
+            console.error('[API /api/user/workspaces] Supabase query error:', error)
+            throw error
+        }
 
-        const workspaces = memberships.map((m: any) => ({
+        const workspaces = (memberships || []).map((m: any) => ({
             id: m.workspace_id,
             // @ts-ignore - Supabase join typing is complex, but we know workspaces is joined
             name: m.workspaces?.name || 'Unknown Workspace',
@@ -39,6 +42,10 @@ export async function GET(req: NextRequest) {
         return res
     } catch (err) {
         if (err instanceof Response) return err
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('[API /api/user/workspaces] Error:', err)
+        return NextResponse.json(
+            { error: err instanceof Error ? err.message : 'Internal server error' },
+            { status: 500 }
+        )
     }
 }
