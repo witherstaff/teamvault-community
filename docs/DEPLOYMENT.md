@@ -317,6 +317,10 @@ sudo certbot --nginx -d vault.yourdomain.com
    - Sign in via Auth0 to initialize your administrator account.
 3. **Hardening**:
    - Once all checks are green, set `DISABLE_INSTALL_CHECK=true` in your environment variables and redeploy/restart.
+4. **Ongoing Audits via Master Admin**:
+   - Access the operator console at `https://vault.yourdomain.com/master-admin` (requires your email listed in `MASTER_ADMIN_EMAILS`).
+   - Use the **Environment Health (`EnvCheckTab`)** to run authenticated diagnostics on-demand, verify S3/R2 storage read/write connectivity, and audit configuration variables even after `/install-check` is disabled.
+   - Use **Workspaces**, **System Statistics**, and **Abuse** tabs for platform-wide tenant and security management.
 
 ---
 

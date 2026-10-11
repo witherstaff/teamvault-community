@@ -30,8 +30,8 @@
 - **Recycle Bin:** Soft-deletion recovery with configurable automatic retention pruning.
 - **Desktop Synchronization:** Native bidirectional background desktop client integration (`TeamVault Drive` for Windows, macOS, and Linux).
 - **Forensic Audit Logging:** Immutable audit ledger recording logins, uploads, downloads, deletions, and administrative actions.
-- **Master Admin Dashboard:** Service-wide operator analytics (`/master-admin`) for managing workspaces, tracking storage quotas, and inspecting system health.
-- **Preflight Environment Checker:** Built-in `/install-check` diagnostic tool to verify all database, storage, and Auth0 variables prior to first login.
+- **Master Admin Dashboard:** Service-wide operator console (`/master-admin`) featuring authenticated environment variable auditing (`EnvCheckTab`), multi-tenant workspace management, storage quota overrides, platform statistics, and abuse takedowns.
+- **Preflight Environment Checker:** Built-in `/install-check` diagnostic tool to verify all database, storage, and Auth0 variables prior to first login (safely locked via `DISABLE_INSTALL_CHECK=true` in production).
 
 ---
 

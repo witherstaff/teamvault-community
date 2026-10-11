@@ -65,8 +65,9 @@ If you choose to self-host, you can run a production-ready, fully functional ins
 4. [Configuring Environment Variables](#configuring-environment-variables)
 5. [Diagnostics & Preflight with `/install-check`](#diagnostics--preflight-with-install-check)
 6. [Securing & Disabling `/install-check`](#securing--disabling-install-check)
-7. [Deploying to Production (Vercel)](#deploying-to-production-vercel)
-8. [Turnkey Alternative: TeamVault Cloud](#turnkey-alternative-teamvault-cloud)
+7. [Ongoing System Health: The `/master-admin` Operator Suite](#ongoing-system-health-the-master-admin-operator-suite)
+8. [Deploying to Production](#deploying-to-production)
+9. [Turnkey Alternative: TeamVault Cloud](#turnkey-alternative-teamvault-cloud)
 
 ---
 
@@ -242,12 +243,17 @@ Resend handles workspace invitation emails and security bypass codes.
 
 ### 5. Master Admin Configuration
 
-1. In `.env.local`, set your administrator email address:
+1. In `.env.local`, set your platform administrator email address:
    ```bash
    MASTER_ADMIN_EMAILS=admin@yourcompany.com
    ```
-   *(Multiple emails can be separated by commas, e.g. `admin1@example.com,admin2@example.com`).*
-2. This grants authorized users access to `/master-admin` for workspace management, tenant analytics, and system oversight.
+   *(Multiple emails can be separated by commas, e.g. `admin1@example.com,admin2@example.com` — comparisons are case-insensitive).*
+2. This grants authorized users access to `/master-admin`, providing:
+   - **Environment Health Audit**: An authenticated environment variable and storage diagnostics runner (available even after `/install-check` is disabled).
+   - **Workspace Management**: View and modify all tenant workspaces, storage quotas, and plans.
+   - **System Statistics**: Track aggregate storage consumption, active users, and tenant volume.
+   - **Abuse Monitoring**: Detect high-download anomalies and execute administrative file takedowns.
+   See [The `/master-admin` Operator Suite](#ongoing-system-health-the-master-admin-operator-suite) for a detailed walkthrough of each tool.
 
 ---
 
@@ -321,6 +327,27 @@ If you prefer to permanently purge the diagnostic page from your code:
 ```bash
 rm -rf src/app/install-check src/app/api/install-check
 ```
+
+---
+
+## Ongoing System Health: The `/master-admin` Operator Suite
+
+Once the public `/install-check` diagnostic page is secured or disabled in production, administrators can continue to audit environment variables and manage the overall system through the authenticated operator console at:
+
+```
+https://vault.yourdomain.com/master-admin
+```
+
+> 🔒 **Access Guard**: This dashboard requires an active Auth0 session and is strictly restricted to email addresses defined in the `MASTER_ADMIN_EMAILS` environment variable (case-insensitive).
+
+### Master Admin Tools & Dashboards
+
+| Tool / Tab | Purpose & Capabilities |
+|---|---|
+| **Environment Health (`EnvCheckTab`)** | **Authenticated Environment Variable Audit**: Runs the full configuration diagnostic test, verifies all Supabase, Auth0, and S3 variables, performs deep storage read/write connectivity tests, and highlights missing variables with masked secrets. **Persists even when `DISABLE_INSTALL_CHECK=true` is enabled**, giving operators a permanent, secure inspection tool. |
+| **Workspaces (`WorkspacesTab`)** | **Multi-Tenant Administration**: View all registered workspaces, real-time storage quota usage bars, plan tiers, creation dates, and owner email addresses. Allows operators to override storage limits, adjust plans, or jump directly into any tenant workspace. |
+| **System Statistics (`StatsTab`)** | **Platform-Wide Metrics**: Real-time rollups across all workspaces including total storage consumed, total active users, file count aggregates, and database health. |
+| **Abuse & Takedowns (`AbuseTab`)** | **Incident Response & DLP**: Monitors high-volume download spikes, anomalous activity, and security flags. Includes administrative emergency takedown and lock tools to suspend rogue tenants or compromised files. |
 
 ---
 
