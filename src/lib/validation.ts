@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MAX_FILE_SIZE_BYTES } from '@/lib/config'
 
 // ── Vault ────────────────────────────────────────────────────────
 
@@ -28,7 +29,7 @@ export const createUploadSchema = z.object({
     parent_id: z.string().uuid(),
     filename: z.string().min(1).max(512),
     mime_type: z.string().min(1),
-    size_bytes: z.number().int().positive().max(1_073_741_824), // 1 GB
+    size_bytes: z.number().int().positive().max(MAX_FILE_SIZE_BYTES),
     replaces_object_id: z.string().uuid().optional(),  // if set, overwrite this existing file
 })
 

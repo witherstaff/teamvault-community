@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatBytes, UploadIcon } from './FileList'
-import { VERIFIED_DOWNLOADS_ALLOWED_EXTENSIONS, VERIFIED_DOWNLOADS_FOLDER_NAME } from '@/lib/config'
+import { VERIFIED_DOWNLOADS_ALLOWED_EXTENSIONS, VERIFIED_DOWNLOADS_FOLDER_NAME, MAX_FILE_SIZE_BYTES } from '@/lib/config'
 
 export type WorkspaceInfo = {
     plan_id: string
@@ -40,9 +40,9 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
         // 0. Validate limits upfront
         const totalUploadSize = files.reduce((acc, f) => acc + f.size, 0)
 
-        if (totalUploadSize > 1_073_741_824) {
+        if (totalUploadSize > MAX_FILE_SIZE_BYTES) {
             setStatus('error')
-            setErrorMsg('Total selected files exceed the 1GB maximum upload size limit.')
+            setErrorMsg(`Total selected files exceed the ${formatBytes(MAX_FILE_SIZE_BYTES)} maximum upload size limit.`)
             return
         }
 
@@ -195,7 +195,7 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                     <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
                     <button className="btn btn-primary" onClick={upload} disabled={!!(
                         files.length === 0 ||
-                        files.reduce((acc, f) => acc + f.size, 0) > 1_073_741_824 || // Check if total exceeds 1GB
+                        files.reduce((acc, f) => acc + f.size, 0) > MAX_FILE_SIZE_BYTES ||
                         status === 'uploading' ||
                         status === 'finalizing' ||
                         status === 'done' ||

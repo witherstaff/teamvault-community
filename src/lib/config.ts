@@ -119,8 +119,17 @@ export function isMasterAdmin(email: string): boolean {
 
 // ── File Upload Limits ───────────────────────────────────────────
 
-export const MAX_FILE_SIZE_BYTES = 5 * 1024 ** 3          // 5 GB per file
-export const MAX_FILE_SIZE_LABEL = '5 GB'
+const parsedMaxFileSizeBytes = process.env.MAX_FILE_SIZE_BYTES
+    ? parseInt(process.env.MAX_FILE_SIZE_BYTES, 10)
+    : (process.env.NEXT_PUBLIC_MAX_FILE_SIZE_BYTES ? parseInt(process.env.NEXT_PUBLIC_MAX_FILE_SIZE_BYTES, 10) : NaN)
+
+export const DEFAULT_MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024 // 2 GB
+
+export const MAX_FILE_SIZE_BYTES = (!isNaN(parsedMaxFileSizeBytes) && parsedMaxFileSizeBytes > 0)
+    ? parsedMaxFileSizeBytes
+    : DEFAULT_MAX_FILE_SIZE_BYTES
+
+export const MAX_FILE_SIZE_LABEL = `${(MAX_FILE_SIZE_BYTES / (1024 * 1024 * 1024)).toFixed(MAX_FILE_SIZE_BYTES % (1024 * 1024 * 1024) === 0 ? 0 : 1)} GB`
 export const ALLOWED_UPLOAD_TYPES: string[] = []           // empty = allow all
 export const PRESIGNED_URL_EXPIRY_SECONDS = 900            // 15 min upload window
 export const DOWNLOAD_URL_EXPIRY_SECONDS = 120             // 2 min download window
