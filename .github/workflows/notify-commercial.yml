@@ -1,0 +1,67 @@
+name: Sync & Notify Commercial Service
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  sync-commercial:
+    name: Update Submodule & Trigger Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Community
+        uses: actions/checkout@v4
+
+      - name: Update Submodule in Commercial Repository
+        id: update_submodule
+        env:
+          PAT: ${{ secrets.COMMERCIAL_REPO_TOKEN || secrets.COMMERCIAL_PAT || secrets.GH_PAT }}
+        run: |
+          if [ -z "$PAT" ]; then
+            echo "::warning ::No GitHub Personal Access Token (COMMERCIAL_REPO_TOKEN, COMMERCIAL_PAT, or GH_PAT) configured. Skipping commercial submodule commit."
+            exit 0
+          fi
+
+          echo "Configuring Git committer..."
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          echo "Cloning teamvault-commercial..."
+          git clone https://x-access-token:${PAT}@github.com/witherstaff/teamvault-commercial.git commercial-repo
+          cd commercial-repo
+
+          echo "Updating community submodule reference..."
+          git submodule update --init --remote community
+
+          if git diff --quiet community; then
+            echo "Submodule is already at the latest commit. No commit needed."
+          else
+            git add community
+            git commit -m "chore(submodule): update community to witherstaff/teamvault-community@${{ github.sha }}"
+            git push origin main
+            echo "Successfully committed and pushed submodule update to teamvault-commercial."
+          fi
+
+      - name: Call Vercel Deploy Hook
+        id: call_deploy_hook
+        env:
+          DEPLOY_HOOK: ${{ secrets.VERCEL_COMMERCIAL_DEPLOY_HOOK || secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "No Vercel Deploy Hook URL configured (VERCEL_COMMERCIAL_DEPLOY_HOOK or VERCEL_DEPLOY_HOOK). Skipping direct deploy hook ping."
+            exit 0
+          fi
+
+          echo "Calling Vercel Deploy Hook..."
+          HTTP_RESPONSE=$(curl -s -o response.txt -w "%{http_code}" -X POST "$DEPLOY_HOOK")
+          echo "Vercel Deploy Hook response code: $HTTP_RESPONSE"
+          cat response.txt
+          echo ""
+
+          if [ "$HTTP_RESPONSE" -ge 200 ] && [ "$HTTP_RESPONSE" -lt 300 ]; then
+            echo "Deployment triggered successfully on Vercel."
+          else
+            echo "::warning ::Vercel deploy hook returned status $HTTP_RESPONSE"
+          fi
