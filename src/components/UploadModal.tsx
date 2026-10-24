@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { formatBytes, UploadIcon } from './FileList'
 import { VERIFIED_DOWNLOADS_ALLOWED_EXTENSIONS, VERIFIED_DOWNLOADS_FOLDER_NAME, MAX_FILE_SIZE_BYTES } from '@/lib/config'
 
@@ -29,9 +29,20 @@ async function sha256Hex(file: File): Promise<string> {
 export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDownloads, onClose, onSuccess }: UploadModalProps) {
     const [files, setFiles] = useState<File[]>([])
     const [progress, setProgress] = useState(0)
+    const [currentFileUploadedBytes, setCurrentFileUploadedBytes] = useState(0)
+    const [currentFileTotalBytes, setCurrentFileTotalBytes] = useState(0)
     const [status, setStatus] = useState<'idle' | 'uploading' | 'finalizing' | 'done' | 'error'>('idle')
     const [errorMsg, setErrorMsg] = useState('')
     const [currentFileIndex, setCurrentFileIndex] = useState(0)
+    const activeXhrRef = useRef<XMLHttpRequest | null>(null)
+
+    const handleClose = () => {
+        if (activeXhrRef.current) {
+            activeXhrRef.current.abort()
+            activeXhrRef.current = null
+        }
+        onClose()
+    }
 
     const upload = async () => {
         if (files.length === 0 || !parentId) return
@@ -65,7 +76,7 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                 const overallBaseProgress = (i / files.length) * 100
 
                 // 1. Get presigned URL
-                setProgress(Math.round(overallBaseProgress + (10 / files.length))) // 10% of this file's progress
+                setProgress(Math.round(overallBaseProgress + (5 / files.length)))
                 const res = await fetch('/api/vault/file/create-upload', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -77,34 +88,64 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                     renames.push({ original: file.name, resolved: resolved_filename })
                 }
 
-                // 2. PUT to R2 / S3 via presigned URL
-                setProgress(Math.round(overallBaseProgress + (40 / files.length)))
-                let response: Response
-                try {
-                    response = await fetch(upload_url, {
-                        method: 'PUT',
-                        body: file,
-                        // Do NOT send any extra headers. The presigned URL handles the signature,
-                        // and browsers handle Content-Type/Length natively with body: file.
-                    });
-                } catch (fetchErr) {
-                    console.error('[STORAGE PUT ERROR]', fetchErr)
-                    throw new Error(
-                        `Storage upload blocked by browser (CORS or network error). Ensure your Cloudflare R2 / S3 bucket has a CORS policy allowing PUT requests from this domain.`
-                    )
-                }
+                // 2. PUT to R2 / S3 via XMLHttpRequest for real-time progress
+                setCurrentFileUploadedBytes(0)
+                setCurrentFileTotalBytes(file.size)
 
-                if (!response.ok) {
-                    throw new Error(`Storage upload failed for ${file.name} (HTTP ${response.status})`);
-                }
+                await new Promise<void>((resolve, reject) => {
+                    const xhr = new XMLHttpRequest()
+                    activeXhrRef.current = xhr
+                    xhr.open('PUT', upload_url)
 
-                // 2.5. Compute SHA-256 checksum of the uploaded file
-                setProgress(Math.round(overallBaseProgress + (80 / files.length)))
-                const checksum_sha256 = await sha256Hex(file)
+                    xhr.upload.onprogress = (event) => {
+                        if (event.lengthComputable && event.total > 0) {
+                            setCurrentFileUploadedBytes(event.loaded)
+                            setCurrentFileTotalBytes(event.total)
+                            const fileFraction = event.loaded / event.total
+                            // Allocate 5% to 85% of this file's progress chunk to upload transfer
+                            const currentFileProgress = 5 + (fileFraction * 80)
+                            const overall = overallBaseProgress + (currentFileProgress / files.length)
+                            setProgress(Math.min(95, Math.round(overall)))
+                        }
+                    }
+
+                    xhr.onload = () => {
+                        activeXhrRef.current = null
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve()
+                        } else {
+                            reject(new Error(`Storage upload failed for ${file.name} (HTTP ${xhr.status})`))
+                        }
+                    }
+
+                    xhr.onerror = () => {
+                        activeXhrRef.current = null
+                        reject(new Error(
+                            `Storage upload blocked by browser (CORS or network error). Ensure your Cloudflare R2 / S3 bucket has a CORS policy allowing PUT requests from this domain.`
+                        ))
+                    }
+
+                    xhr.onabort = () => {
+                        activeXhrRef.current = null
+                        reject(new Error('Upload cancelled'))
+                    }
+
+                    xhr.send(file)
+                })
+
+                // 2.5. Compute SHA-256 checksum (only for files <= 100MB to avoid tab out-of-memory freeze)
+                let checksum_sha256: string | undefined = undefined
+                if (file.size <= 100 * 1024 * 1024) {
+                    try {
+                        checksum_sha256 = await sha256Hex(file)
+                    } catch {
+                        // ignore checksum failure, it is optional in finalize
+                    }
+                }
 
                 // 3. Finalize
                 setStatus('finalizing')
-                setProgress(Math.round(overallBaseProgress + (90 / files.length)))
+                setProgress(Math.round(overallBaseProgress + (95 / files.length)))
                 const fin = await fetch('/api/vault/file/finalize', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -112,7 +153,7 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                 })
                 if (!fin.ok) { const e = await fin.json(); throw new Error(e.error || `Finalize failed for ${file.name}`) }
 
-                setStatus('uploading') // Reset to uploading for the next file
+                setStatus('uploading') // Reset to uploading for next file if multiple
             }
 
             setStatus('done')
@@ -125,11 +166,11 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
     }
 
     return (
-        <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+        <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && handleClose()}>
             <div className="modal">
                 <div className="modal-header">
                     <h3>Upload File</h3>
-                    <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+                    <button className="btn btn-ghost btn-sm" onClick={handleClose}>✕</button>
                 </div>
                 <div className="modal-body">
                     {status === 'idle' || status === 'error' ? (
@@ -152,7 +193,7 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                                     <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{files.length} file{files.length === 1 ? '' : 's'} selected ({formatBytes(files.reduce((a, b) => a + b.size, 0))})</div>
                                     {files.map((f, i) => (
                                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', background: 'var(--surface-active)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }} title={f.name}>{f.name}</span>
+                                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }} title={f.name}>{f.name}</span>
                                             <span className="text-muted">{formatBytes(f.size)}</span>
                                         </div>
                                     ))}
@@ -179,12 +220,22 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
 
                     {(status === 'uploading' || status === 'finalizing') && (
                         <div>
-                            <div style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                {status === 'uploading' || status === 'finalizing' ? `Uploading file ${currentFileIndex + 1} of ${files.length} (${progress}%)` : 'Finalizing…'}
+                            <div style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>
+                                    {status === 'finalizing'
+                                        ? 'Finalizing upload…'
+                                        : `Uploading ${files[currentFileIndex]?.name || ''} (${currentFileIndex + 1}/${files.length})`}
+                                </span>
+                                <span style={{ fontWeight: 600 }}>{progress}%</span>
                             </div>
                             <div className="progress-bar">
-                                <div className="progress-fill" style={{ width: status === 'finalizing' ? '100%' : `${progress}%` }} />
+                                <div className="progress-fill" style={{ width: `${progress}%` }} />
                             </div>
+                            {status === 'uploading' && currentFileTotalBytes > 0 && (
+                                <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted, #888)', textAlign: 'right' }}>
+                                    {formatBytes(currentFileUploadedBytes)} of {formatBytes(currentFileTotalBytes)}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -192,7 +243,7 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                     {status === 'error' && <div style={{ padding: '0.75rem', background: 'var(--error-subtle)', borderRadius: 'var(--radius-sm)', color: 'var(--error)', fontSize: '0.875rem' }}>{errorMsg}</div>}
                 </div>
                 <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                    <button className="btn btn-secondary" onClick={handleClose}>Cancel</button>
                     <button className="btn btn-primary" onClick={upload} disabled={!!(
                         files.length === 0 ||
                         files.reduce((acc, f) => acc + f.size, 0) > MAX_FILE_SIZE_BYTES ||
