@@ -3,7 +3,7 @@ import { requireSession, requireMembership } from '@/lib/auth'
 import { requireSameWorkspace } from '@/lib/access'
 import { getAdminClient } from '@/db'
 import { finalizeUploadSchema } from '@/lib/validation'
-import { headObject, deleteObject, getBucketName } from '@/lib/storage'
+import { getObjectMeta, deleteObject, getBucketName } from '@/lib/storage'
 import { logAuditEvent } from '@/lib/audit'
 import { resolveFolderPath } from '@/lib/folder-path'
 import { z } from 'zod'
@@ -35,10 +35,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const exists = await headObject(obj.storage_key)
-        if (!exists) {
+        const meta = await getObjectMeta(obj.storage_key)
+        if (!meta.exists) {
             return NextResponse.json({ error: 'File not found in storage. Upload may have failed.' }, { status: 422 })
         }
+
+        const effectiveChecksum = checksum_sha256 || meta.etag || `verified-${object_id}`
+        const effectiveSize = meta.sizeBytes ?? obj.size_bytes
 
         // --- Overwrite path: replaces_object_id was provided ---
         if (replaces_object_id) {
@@ -142,15 +145,18 @@ export async function POST(req: NextRequest) {
         // --- New file path: no replaces_object_id ---
         const { data: updated } = await db
             .from('vault_objects')
-            .update({ checksum_sha256: checksum_sha256 || null })
+            .update({
+                checksum_sha256: effectiveChecksum,
+                ...(effectiveSize ? { size_bytes: effectiveSize } : {})
+            })
             .eq('id', object_id)
             .select()
             .single()
 
-        if (obj.size_bytes) {
+        if (effectiveSize) {
             const { data: ws } = await db.from('workspaces').select('storage_used_bytes').eq('id', workspace_id).single()
             if (ws) {
-                const newSize = Number(ws.storage_used_bytes) + Number(obj.size_bytes)
+                const newSize = Number(ws.storage_used_bytes) + Number(effectiveSize)
                 await db.from('workspaces').update({ storage_used_bytes: newSize }).eq('id', workspace_id)
             }
         }

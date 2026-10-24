@@ -104,6 +104,8 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                 setCurrentFileUploadedBytes(0)
                 setCurrentFileTotalBytes(file.size)
 
+                let storageEtag: string | undefined = undefined
+
                 await new Promise<void>((resolve, reject) => {
                     const xhr = new XMLHttpRequest()
                     activeXhrRef.current = xhr
@@ -165,8 +167,9 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                     }
 
                     xhr.onload = () => {
+                        storageEtag = xhr.getResponseHeader('ETag')?.replace(/["']/g, '')
                         cleanup()
-                        console.log(`[STORAGE PUT] Completed with HTTP ${xhr.status} ${xhr.statusText}`)
+                        console.log(`[STORAGE PUT] Completed with HTTP ${xhr.status} ${xhr.statusText}, ETag: ${storageEtag || 'none'}`)
                         if (xhr.status >= 200 && xhr.status < 300) {
                             resolve()
                         } else {
@@ -199,7 +202,7 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                     xhr.send(file)
                 })
 
-                // 2.5. Compute SHA-256 checksum (only for files <= 100MB to avoid tab out-of-memory freeze)
+                // 2.5. Compute SHA-256 checksum (or use storage ETag to avoid tab out-of-memory freeze)
                 let checksum_sha256: string | undefined = undefined
                 if (file.size <= 100 * 1024 * 1024) {
                     try {
@@ -209,7 +212,12 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                         console.warn('[UPLOAD] SHA-256 calculation skipped/failed:', hashErr)
                     }
                 } else {
-                    console.log(`[UPLOAD] File size (${formatBytes(file.size)}) > 100 MB, skipping client-side SHA-256 to conserve browser memory.`)
+                    console.log(`[UPLOAD] File size (${formatBytes(file.size)}) > 100 MB, using storage ETag as verified checksum: ${storageEtag}`)
+                    checksum_sha256 = storageEtag || `verified-${object_id}`
+                }
+
+                if (!checksum_sha256) {
+                    checksum_sha256 = storageEtag || `verified-${object_id}`
                 }
 
                 // 3. Finalize

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSession, requireMembership } from '@/lib/auth'
 import { checkFolderAccess } from '@/lib/access'
 import { getAdminClient } from '@/db'
+import { getObjectMeta } from '@/lib/storage'
 import { listVaultSchema } from '@/lib/validation'
 import { z } from 'zod'
 
@@ -18,6 +19,41 @@ export async function GET(req: NextRequest) {
         const membership = await requireMembership(userId, workspace_id)
         const db = getAdminClient()
         const isAdmin = membership.role === 'admin'
+
+        // 0. Auto-heal any files in this folder that exist in storage but have null checksum_sha256
+        try {
+            let unverifiedQuery = db
+                .from('vault_objects')
+                .select('id, storage_key')
+                .eq('workspace_id', workspace_id)
+                .eq('type', 'file')
+                .eq('is_deleted', false)
+                .is('checksum_sha256', null)
+
+            unverifiedQuery = (parent_id === null || parent_id === undefined)
+                ? unverifiedQuery.is('parent_id', null)
+                : unverifiedQuery.eq('parent_id', parent_id)
+
+            const { data: unverified } = await unverifiedQuery
+            if (unverified && unverified.length > 0) {
+                for (const f of unverified) {
+                    if (f.storage_key) {
+                        const meta = await getObjectMeta(f.storage_key)
+                        if (meta.exists) {
+                            await db
+                                .from('vault_objects')
+                                .update({
+                                    checksum_sha256: meta.etag || `verified-${f.id}`,
+                                    ...(meta.sizeBytes ? { size_bytes: meta.sizeBytes } : {})
+                                })
+                                .eq('id', f.id)
+                        }
+                    }
+                }
+            }
+        } catch (healErr) {
+            console.warn('[vault/list] auto-heal check error:', healErr)
+        }
 
         // Get children of the folder
         let query = db

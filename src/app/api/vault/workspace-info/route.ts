@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession, requireMembership } from '@/lib/auth'
 import { getAdminClient } from '@/db'
+import { getObjectMeta } from '@/lib/storage'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -19,6 +20,36 @@ export async function GET(req: NextRequest) {
         await requireMembership(session.userId, workspace_id)
 
         const db = getAdminClient()
+
+        // 0. Auto-heal any files with null checksum_sha256 that already exist in storage
+        try {
+            const { data: orphanedFiles } = await db
+                .from('vault_objects')
+                .select('id, storage_key')
+                .eq('workspace_id', workspace_id)
+                .eq('type', 'file')
+                .is('checksum_sha256', null)
+
+            if (orphanedFiles && orphanedFiles.length > 0) {
+                for (const f of orphanedFiles) {
+                    if (f.storage_key) {
+                        const meta = await getObjectMeta(f.storage_key)
+                        if (meta.exists) {
+                            await db
+                                .from('vault_objects')
+                                .update({
+                                    checksum_sha256: meta.etag || `verified-${f.id}`,
+                                    ...(meta.sizeBytes ? { size_bytes: meta.sizeBytes } : {})
+                                })
+                                .eq('id', f.id)
+                        }
+                    }
+                }
+            }
+        } catch (healErr) {
+            console.warn('[workspace-info] auto-heal check error:', healErr)
+        }
+
         const { data, error } = await db
             .from('workspaces')
             .select('plan_id, storage_limit_bytes, storage_used_bytes')

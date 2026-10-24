@@ -155,6 +155,23 @@ export async function headObject(key: string): Promise<boolean> {
 }
 
 /**
+ * Fetch object metadata from storage (HEAD request).
+ */
+export async function getObjectMeta(key: string): Promise<{ exists: boolean; etag?: string; sizeBytes?: number }> {
+    const { client, config } = getStorage()
+    try {
+        const res = await client.send(new HeadObjectCommand({ Bucket: config.bucket, Key: key }))
+        return {
+            exists: true,
+            etag: res.ETag ? res.ETag.replace(/["']/g, '') : undefined,
+            sizeBytes: res.ContentLength,
+        }
+    } catch {
+        return { exists: false }
+    }
+}
+
+/**
  * Read an object's full contents into memory (server-side only).
  * Returns null if the object has no body.
  */
