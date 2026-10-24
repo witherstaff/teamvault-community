@@ -166,7 +166,7 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                                 <div>
                                     <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>☁️</div>
                                     <div style={{ fontWeight: 500 }}>Drop files here or click to browse</div>
-                                    <div className="text-muted text-sm mt-1">Max 1 GB total per upload</div>
+                                    <div className="text-muted text-sm mt-1">Max {formatBytes(MAX_FILE_SIZE_BYTES)} total per upload</div>
                                     {inVerifiedDownloads && (
                                         <div className="text-muted text-sm mt-1" style={{ color: 'var(--warning, #f59e0b)' }}>
                                             ⚠️ Only {VERIFIED_DOWNLOADS_ALLOWED_EXTENSIONS.join(', ')} files are allowed in <strong>{VERIFIED_DOWNLOADS_FOLDER_NAME}</strong>
