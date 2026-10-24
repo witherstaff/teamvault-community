@@ -304,34 +304,34 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                     ) : null}
 
                     {(status === 'uploading' || status === 'finalizing') && (
-                        <div>
-                            <div style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }} title={files[currentFileIndex]?.name || ''}>
                                     {status === 'finalizing'
                                         ? 'Saving to TeamVault…'
                                         : (currentFileTotalBytes > 0 && currentFileUploadedBytes >= currentFileTotalBytes
                                             ? `Committing with storage provider (waiting for confirmation${waitingSeconds > 0 ? `: ${waitingSeconds}s` : ''})…`
                                             : `Uploading ${files[currentFileIndex]?.name || ''} (${currentFileIndex + 1}/${files.length})`)}
                                 </span>
-                                <span style={{ fontWeight: 600 }}>{progress}%</span>
+                                <span style={{ fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap' }}>{progress}%</span>
                             </div>
                             <div className="progress-bar">
                                 <div className="progress-fill" style={{ width: `${progress}%` }} />
                             </div>
                             {status === 'uploading' && currentFileTotalBytes > 0 && (
-                                <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted, #888)', display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #888)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }} title={files[currentFileIndex]?.name || ''}>
                                         {currentFileUploadedBytes >= currentFileTotalBytes
                                             ? `All bytes sent. Storage provider writing object (${waitingSeconds}s elapsed)…`
                                             : files[currentFileIndex]?.name || ''}
                                     </span>
-                                    <span>
+                                    <span style={{ flexShrink: 0, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
                                         {formatBytes(currentFileUploadedBytes)} of {formatBytes(currentFileTotalBytes)}
                                     </span>
                                 </div>
                             )}
                             {currentFileUploadedBytes >= currentFileTotalBytes && waitingSeconds > 15 && status === 'uploading' && (
-                                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'var(--surface-active, rgba(255,255,255,0.05))', padding: '0.5rem', borderRadius: '4px', textAlign: 'left' }}>
+                                <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'var(--surface-active, rgba(255,255,255,0.05))', padding: '0.5rem', borderRadius: '4px', textAlign: 'left' }}>
                                     💡 <strong>Note:</strong> Multi-gigabyte files (1.5 GB+) require cloud storage providers (S3/Cloudflare R2) to verify data integrity, assemble parts, and replicate across clusters. Please keep this browser window open.
                                 </div>
                             )}
