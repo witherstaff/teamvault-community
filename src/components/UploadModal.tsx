@@ -95,22 +95,48 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                 await new Promise<void>((resolve, reject) => {
                     const xhr = new XMLHttpRequest()
                     activeXhrRef.current = xhr
+                    xhr.timeout = 0 // Never timeout large file transfers
                     xhr.open('PUT', upload_url)
+
+                    let serverWaitInterval: NodeJS.Timeout | null = null
 
                     xhr.upload.onprogress = (event) => {
                         if (event.lengthComputable && event.total > 0) {
                             setCurrentFileUploadedBytes(event.loaded)
                             setCurrentFileTotalBytes(event.total)
-                            const fileFraction = event.loaded / event.total
-                            // Allocate 5% to 85% of this file's progress chunk to upload transfer
-                            const currentFileProgress = 5 + (fileFraction * 80)
-                            const overall = overallBaseProgress + (currentFileProgress / files.length)
-                            setProgress(Math.min(95, Math.round(overall)))
+                            const fileFraction = Math.min(1, event.loaded / event.total)
+
+                            if (event.loaded < event.total) {
+                                // Scale byte transmission from 5% to 90%
+                                const currentFileProgress = 5 + (fileFraction * 85)
+                                const overall = overallBaseProgress + (currentFileProgress / files.length)
+                                setProgress(Math.min(90, Math.round(overall)))
+                            } else {
+                                // All bytes sent to storage server, now awaiting S3/R2 HTTP 200 response
+                                setProgress(Math.round(overallBaseProgress + (91 / files.length)))
+                                if (!serverWaitInterval) {
+                                    let waitTick = 91
+                                    serverWaitInterval = setInterval(() => {
+                                        if (waitTick < 95) {
+                                            waitTick += 1
+                                            setProgress(Math.round(overallBaseProgress + (waitTick / files.length)))
+                                        }
+                                    }, 2000)
+                                }
+                            }
                         }
                     }
 
-                    xhr.onload = () => {
+                    const cleanup = () => {
+                        if (serverWaitInterval) {
+                            clearInterval(serverWaitInterval)
+                            serverWaitInterval = null
+                        }
                         activeXhrRef.current = null
+                    }
+
+                    xhr.onload = () => {
+                        cleanup()
                         if (xhr.status >= 200 && xhr.status < 300) {
                             resolve()
                         } else {
@@ -119,14 +145,14 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                     }
 
                     xhr.onerror = () => {
-                        activeXhrRef.current = null
+                        cleanup()
                         reject(new Error(
                             `Storage upload blocked by browser (CORS or network error). Ensure your Cloudflare R2 / S3 bucket has a CORS policy allowing PUT requests from this domain.`
                         ))
                     }
 
                     xhr.onabort = () => {
-                        activeXhrRef.current = null
+                        cleanup()
                         reject(new Error('Upload cancelled'))
                     }
 
@@ -145,7 +171,7 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
 
                 // 3. Finalize
                 setStatus('finalizing')
-                setProgress(Math.round(overallBaseProgress + (95 / files.length)))
+                setProgress(Math.round(overallBaseProgress + (96 / files.length)))
                 const fin = await fetch('/api/vault/file/finalize', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -223,8 +249,10 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                             <div style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span>
                                     {status === 'finalizing'
-                                        ? 'Finalizing upload…'
-                                        : `Uploading ${files[currentFileIndex]?.name || ''} (${currentFileIndex + 1}/${files.length})`}
+                                        ? 'Saving to TeamVault…'
+                                        : (currentFileTotalBytes > 0 && currentFileUploadedBytes >= currentFileTotalBytes
+                                            ? 'Committing with storage provider (waiting for S3/R2 confirmation)…'
+                                            : `Uploading ${files[currentFileIndex]?.name || ''} (${currentFileIndex + 1}/${files.length})`)}
                                 </span>
                                 <span style={{ fontWeight: 600 }}>{progress}%</span>
                             </div>
@@ -232,8 +260,15 @@ export function UploadModal({ workspaceId, parentId, workspaceInfo, inVerifiedDo
                                 <div className="progress-fill" style={{ width: `${progress}%` }} />
                             </div>
                             {status === 'uploading' && currentFileTotalBytes > 0 && (
-                                <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted, #888)', textAlign: 'right' }}>
-                                    {formatBytes(currentFileUploadedBytes)} of {formatBytes(currentFileTotalBytes)}
+                                <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted, #888)', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>
+                                        {currentFileUploadedBytes >= currentFileTotalBytes
+                                            ? 'All bytes sent. Storage provider writing object…'
+                                            : files[currentFileIndex]?.name || ''}
+                                    </span>
+                                    <span>
+                                        {formatBytes(currentFileUploadedBytes)} of {formatBytes(currentFileTotalBytes)}
+                                    </span>
                                 </div>
                             )}
                         </div>
