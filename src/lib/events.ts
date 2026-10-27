@@ -1,3 +1,6 @@
+import { after } from 'next/server'
+import { registerExtensionEventHandlers } from './event-handlers'
+
 export type VaultEventType =
     | 'file:created'
     | 'file:version_added'
@@ -77,6 +80,7 @@ export type VaultEventHandler = (event: VaultEvent) => Promise<void> | void
 
 declare global {
     var __TEAMVAULT_EVENT_HANDLERS__: Set<VaultEventHandler> | undefined
+    var __TEAMVAULT_EXTENSION_HANDLERS_LOADED__: boolean | undefined
 }
 
 function getHandlers(): Set<VaultEventHandler> {
@@ -101,18 +105,41 @@ export function registerVaultEventHandler(handler: VaultEventHandler): () => voi
 /**
  * Emits a vault lifecycle event asynchronously to all registered handlers.
  * Never throws to the caller — failures in external handlers are caught and logged.
+ *
+ * Handlers run inside Next.js `after()` when called from a request, so they are
+ * allowed to finish on serverless platforms after the response has been sent.
  */
 export async function emitVaultEvent(event: VaultEvent): Promise<void> {
+    ensureExtensionHandlers()
+
     const handlers = getHandlers()
     if (handlers.size === 0) return
 
-    const promises = Array.from(handlers).map(async (handler) => {
-        try {
-            await handler(event)
-        } catch (err) {
-            console.error(`[events] Handler failed for event "${event.type}":`, err)
-        }
-    })
+    const run = async () => {
+        const promises = Array.from(handlers).map(async (handler) => {
+            try {
+                await handler(event)
+            } catch (err) {
+                console.error(`[events] Handler failed for event "${event.type}":`, err)
+            }
+        })
+        await Promise.allSettled(promises)
+    }
 
-    await Promise.allSettled(promises)
+    try {
+        after(run)
+    } catch {
+        // Outside a request scope (scripts, tests) — run inline
+        await run()
+    }
+}
+
+function ensureExtensionHandlers(): void {
+    if (globalThis.__TEAMVAULT_EXTENSION_HANDLERS_LOADED__) return
+    globalThis.__TEAMVAULT_EXTENSION_HANDLERS_LOADED__ = true
+    try {
+        registerExtensionEventHandlers(registerVaultEventHandler)
+    } catch (err) {
+        console.error('[events] Failed to register extension handlers:', err)
+    }
 }

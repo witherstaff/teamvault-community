@@ -26,6 +26,7 @@ interface SlackSettingsData {
     teamName?: string
     previewMode?: 'filename' | 'locked' | 'off'
     thumbnails?: boolean
+    emailAutolink?: boolean
     adminChannelId?: string | null
     installedAt?: string
     usage?: SlackUsageStatus
@@ -38,6 +39,9 @@ export default function SlackIntegrationsTab({ workspaceId }: { workspaceId: str
     const [data, setData] = useState<SlackSettingsData | null>(null)
     const [previewMode, setPreviewMode] = useState<'filename' | 'locked' | 'off'>('filename')
     const [thumbnails, setThumbnails] = useState(false)
+    const [emailAutolink, setEmailAutolink] = useState(true)
+    const [adminChannelId, setAdminChannelId] = useState('')
+    const [channels, setChannels] = useState<{ id: string; name: string; is_private: boolean }[]>([])
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
     const fetchSettings = async () => {
@@ -49,6 +53,14 @@ export default function SlackIntegrationsTab({ workspaceId }: { workspaceId: str
                 setData(json)
                 if (json.previewMode) setPreviewMode(json.previewMode)
                 if (json.thumbnails !== undefined) setThumbnails(json.thumbnails)
+                if (json.emailAutolink !== undefined) setEmailAutolink(json.emailAutolink)
+                setAdminChannelId(json.adminChannelId ?? '')
+                if (json.installed) {
+                    fetch(`/api/slack/channels?workspace_id=${workspaceId}`)
+                        .then(r => r.ok ? r.json() : null)
+                        .then(c => c?.channels && setChannels(c.channels))
+                        .catch(() => { })
+                }
             }
         } catch (err) {
             console.error('Failed to load Slack settings:', err)
@@ -72,6 +84,8 @@ export default function SlackIntegrationsTab({ workspaceId }: { workspaceId: str
                     workspace_id: workspaceId,
                     preview_mode: previewMode,
                     thumbnails,
+                    email_autolink: emailAutolink,
+                    admin_channel_id: adminChannelId || null,
                 }),
             })
             if (res.ok) {
@@ -317,6 +331,42 @@ export default function SlackIntegrationsTab({ workspaceId }: { workspaceId: str
                     </label>
                     <div className="text-muted text-xs" style={{ marginLeft: '1.5rem', marginTop: '0.25rem' }}>
                         Thumbnails use short-lived signed URLs. Verified Downloads never show thumbnails regardless of this setting.
+                    </div>
+                </div>
+
+                <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                        <input
+                            type="checkbox"
+                            checked={emailAutolink}
+                            onChange={(e) => setEmailAutolink(e.target.checked)}
+                        />
+                        <span>Match Slack and TeamVault accounts by email (recommended)</span>
+                    </label>
+                    <div className="text-muted text-xs" style={{ marginLeft: '1.5rem', marginTop: '0.25rem' }}>
+                        Lets people share files and receive notifications without any extra setup. Slack verifies email addresses.
+                    </div>
+                </div>
+
+                <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                    <label htmlFor="slack-admin-channel" style={{ fontSize: '0.875rem', fontWeight: 600, display: 'block', marginBottom: '0.375rem' }}>
+                        Admin alert channel
+                    </label>
+                    <select
+                        id="slack-admin-channel"
+                        className="input"
+                        value={adminChannelId}
+                        onChange={(e) => setAdminChannelId(e.target.value)}
+                        disabled={!data?.installed}
+                    >
+                        <option value="">None — don&apos;t send admin alerts</option>
+                        {channels.map(c => (
+                            <option key={c.id} value={c.id}>{c.is_private ? '🔒 ' : '# '}{c.name}</option>
+                        ))}
+                    </select>
+                    <div className="text-muted text-xs" style={{ marginTop: '0.25rem' }}>
+                        Receives storage warnings (80% / 95%), Slack usage alerts, folder access changes and recursive folder deletions.
+                        Invite the TeamVault app to private channels first.
                     </div>
                 </div>
 
