@@ -10,7 +10,7 @@
 
 export type CommercialEnvDefinition = {
     name: string
-    category: 'Commercial Billing (Stripe)' | 'Autonomous Agents & Web3'
+    category: 'Commercial Billing (Stripe)' | 'Autonomous Agents & Web3' | 'Slack Integration'
     service: string
     requirement: 'required_commercial' | 'optional_commercial'
     isSecret: boolean
@@ -170,5 +170,72 @@ export const COMMERCIAL_ENV_DEFINITIONS: CommercialEnvDefinition[] = [
         signUpLabel: 'Alchemy / Base RPC',
         howToGet: 'Alchemy, Infura, QuickNode Base endpoint, or public https://mainnet.base.org.',
         example: 'https://mainnet.base.org',
+    },
+
+    // ── Slack Integration ──────────────────────────────────────────
+    {
+        name: 'SLACK_CLIENT_ID',
+        category: 'Slack Integration',
+        service: 'Slack',
+        requirement: 'required_commercial',
+        isSecret: false,
+        description: 'Slack App Client ID from api.slack.com app management.',
+        whyNeeded: 'Used to initiate the Slack OAuth authorization flow for workspace installation.',
+        signUpUrl: 'https://api.slack.com/apps',
+        signUpLabel: 'Slack API Apps',
+        howToGet: 'In api.slack.com > Your App > Basic Information > App Credentials > Client ID.',
+        example: '1234567890.1234567890',
+    },
+    {
+        name: 'SLACK_CLIENT_SECRET',
+        category: 'Slack Integration',
+        service: 'Slack',
+        requirement: 'required_commercial',
+        isSecret: true,
+        description: 'Slack App Client Secret from api.slack.com app management.',
+        whyNeeded: 'Exchanged along with code during OAuth callback to acquire the bot access token.',
+        signUpUrl: 'https://api.slack.com/apps',
+        signUpLabel: 'Slack API Apps',
+        howToGet: 'In api.slack.com > Your App > Basic Information > App Credentials > Client Secret.',
+        example: 'abcde12345fghij67890klmno',
+    },
+    {
+        name: 'SLACK_SIGNING_SECRET',
+        category: 'Slack Integration',
+        service: 'Slack',
+        requirement: 'required_commercial',
+        isSecret: true,
+        description: 'Slack App Signing Secret for HMAC request verification.',
+        whyNeeded: 'Verifies incoming Slack webhooks and events to protect against forgery and replay attacks.',
+        signUpUrl: 'https://api.slack.com/apps',
+        signUpLabel: 'Slack API Apps',
+        howToGet: 'In api.slack.com > Your App > Basic Information > App Credentials > Signing Secret.',
+        example: '1234567890abcdef1234567890abcdef',
+    },
+    {
+        name: 'SLACK_TOKEN_ENC_KEY',
+        category: 'Slack Integration',
+        service: 'TeamVault Cloud',
+        requirement: 'required_commercial',
+        isSecret: true,
+        description: 'AES-256-GCM encryption key for securing Slack bot tokens at rest.',
+        whyNeeded: 'Ensures Slack bot access tokens stored in the database are encrypted at rest.',
+        signUpUrl: 'https://www.teamvault.cloud',
+        signUpLabel: 'TeamVault Security',
+        howToGet: 'Generate a 64-character hex string via openssl rand -hex 32.',
+        example: 'a1b2c3d4e5f6...32bytes',
+    },
+    {
+        name: 'SLACK_LIMITS_JSON',
+        category: 'Slack Integration',
+        service: 'TeamVault Cloud',
+        requirement: 'optional_commercial',
+        isSecret: false,
+        description: 'Optional JSON override for per-plan Slack usage limits.',
+        whyNeeded: 'Allows instant adjustment of monthly Slack unfurls, shares, or burst caps without code changes.',
+        signUpUrl: 'https://www.teamvault.cloud',
+        signUpLabel: 'Slack Limits Doc',
+        howToGet: 'Optional JSON string, e.g. {"team":{"unfurlsPerMonth":50000}}.',
+        example: '{"team":{"unfurlsPerMonth":50000}}',
     },
 ]

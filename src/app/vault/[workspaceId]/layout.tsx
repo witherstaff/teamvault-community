@@ -4,6 +4,7 @@ import { useRouter, usePathname, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import CommercialExtensions from '@/components/CommercialExtensions'
 
 function FolderIcon() {
     return (
@@ -254,6 +255,7 @@ export default function VaultLayout({ children }: { children: React.ReactNode })
             {/* Main area */}
             <div className="main-area" style={{ transition: 'margin-left var(--transition)', marginLeft: 0 }}>
                 {children}
+                <CommercialExtensions />
 
                 {/* Mobile overlay */}
                 {sidebarOpen && (

@@ -51,6 +51,7 @@ type SortDirection = 'asc' | 'desc'
 export interface FileListProps {
     items: VaultObject[]
     isAdmin: boolean
+    workspaceId?: string
     onNavigateToFolder: (folder: VaultObject) => void
     onDownload: (item: VaultObject) => void
     onRename: (item: VaultObject) => void
@@ -72,6 +73,7 @@ export interface FileListProps {
 export function FileList({
     items,
     isAdmin,
+    workspaceId,
     onNavigateToFolder,
     onDownload,
     onRename,
@@ -280,6 +282,7 @@ export function FileList({
                             item={item}
                             isSelected={selectedIds.has(item.id)}
                             isAdmin={isAdmin}
+                            workspaceId={workspaceId}
                             fileStatusMap={fileStatusMap}
                             activeMenu={activeMenu}
                             menuButtonRefs={menuButtonRefs}

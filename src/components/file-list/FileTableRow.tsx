@@ -4,11 +4,13 @@ import React from 'react'
 import { VaultObject, formatBytes, formatDate } from '../FileList'
 import { FolderIcon, FileIcon, DownloadIcon, MoreIcon } from './file-icons'
 import { ContextMenu } from './ContextMenu'
+import { getFileActions } from '@/lib/file-actions'
 
 interface FileTableRowProps {
     item: VaultObject
     isSelected: boolean
     isAdmin: boolean
+    workspaceId?: string
     fileStatusMap?: Record<string, 'revoked' | 'exhausted' | 'expired' | 'active'>
     activeMenu: string | null
     menuButtonRefs: React.MutableRefObject<Record<string, HTMLButtonElement | null>>
@@ -24,6 +26,7 @@ export function FileTableRow({
     item,
     isSelected,
     isAdmin,
+    workspaceId,
     fileStatusMap,
     activeMenu,
     menuButtonRefs,
@@ -94,7 +97,7 @@ export function FileTableRow({
                             <DownloadIcon />
                         </button>
                     )}
-                    {isAdmin && (
+                    {(isAdmin || getFileActions({ item, workspaceId: workspaceId ?? item.workspace_id ?? '', isAdmin, onClose: () => {} }, 'menu').length > 0) && (
                         <div style={{ position: 'relative' }}>
                             <button
                                 ref={el => { menuButtonRefs.current[item.id] = el }}
@@ -110,6 +113,9 @@ export function FileTableRow({
                                     onClose={() => onSetActiveMenu(null)}
                                     onRename={() => { onSetActiveMenu(null); onRename(item) }}
                                     onDelete={() => { onSetActiveMenu(null); onDelete(item) }}
+                                    item={item}
+                                    workspaceId={workspaceId ?? item.workspace_id}
+                                    isAdmin={isAdmin}
                                 />
                             )}
                         </div>

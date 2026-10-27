@@ -236,6 +236,7 @@ export default function VaultPage() {
                         <FileList
                             items={items}
                             isAdmin={isAdmin}
+                            workspaceId={workspaceId}
                             onNavigateToFolder={(obj) => obj.type === 'folder' ? enterFolder(obj) : setViewItem(obj)}
                             onDownload={(item) => download(item)}
                             onDownloadBatch={downloadBatch}

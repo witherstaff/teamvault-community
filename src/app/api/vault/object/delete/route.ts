@@ -4,6 +4,7 @@ import { requireSameWorkspace, requireFolderAccess } from '@/lib/access'
 import { getAdminClient } from '@/db'
 import { deleteObjectSchema } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
+import { emitVaultEvent } from '@/lib/events'
 import { z } from 'zod'
 
 export async function POST(req: NextRequest) {
@@ -55,6 +56,18 @@ export async function POST(req: NextRequest) {
             await db.from('vault_objects').update(softDelete).eq('id', object_id)
 
             logAuditEvent({ workspaceId: workspace_id, actorUserId: session.userId, actorName: actor?.name, actorEmail: actor?.email, action: 'FILE_DELETED', objectId: object_id, result: 'allowed', metadata: { file_name: obj.name }, request: req })
+
+            void emitVaultEvent({
+                type: 'file:deleted',
+                workspaceId: workspace_id,
+                actorUserId: session.userId,
+                actorName: actor?.name,
+                actorEmail: actor?.email,
+                timestamp: now,
+                objectId: object_id,
+                name: obj.name,
+                parentId: obj.parent_id,
+            })
         } else {
             // Folder delete
             if (!recursive) {
@@ -74,6 +87,18 @@ export async function POST(req: NextRequest) {
                 await db.from('vault_objects').update(softDelete).in('id', ids)
             }
             logAuditEvent({ workspaceId: workspace_id, actorUserId: session.userId, actorName: actor?.name, actorEmail: actor?.email, action: 'FOLDER_DELETED', objectId: object_id, result: 'allowed', metadata: { folder_name: obj.name, recursive }, request: req })
+
+            void emitVaultEvent({
+                type: 'folder:deleted',
+                workspaceId: workspace_id,
+                actorUserId: session.userId,
+                actorName: actor?.name,
+                actorEmail: actor?.email,
+                timestamp: now,
+                folderId: object_id,
+                name: obj.name,
+                recursive,
+            })
         }
 
         return NextResponse.json({ success: true })

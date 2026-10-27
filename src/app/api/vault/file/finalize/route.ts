@@ -6,6 +6,7 @@ import { finalizeUploadSchema } from '@/lib/validation'
 import { getObjectMeta, deleteObject, getBucketName } from '@/lib/storage'
 import { logAuditEvent } from '@/lib/audit'
 import { resolveFolderPath } from '@/lib/folder-path'
+import { emitVaultEvent } from '@/lib/events'
 import { z } from 'zod'
 
 export async function POST(req: NextRequest) {
@@ -139,6 +140,22 @@ export async function POST(req: NextRequest) {
                 }
             })
 
+            void emitVaultEvent({
+                type: 'file:version_added',
+                workspaceId: workspace_id,
+                actorUserId: session.userId,
+                actorName: actor?.name,
+                actorEmail: actor?.email,
+                timestamp: new Date().toISOString(),
+                objectId: replaces_object_id,
+                name: obj.name,
+                sizeBytes: obj.size_bytes ?? 0,
+                mimeType: obj.mime_type,
+                versionNumber: nextVersionNumber,
+                folderPath: folder_path,
+                parentId: obj.parent_id,
+            })
+
             return NextResponse.json(updated)
         }
 
@@ -166,6 +183,21 @@ export async function POST(req: NextRequest) {
             workspaceId: workspace_id, actorUserId: session.userId, actorName: actor?.name, actorEmail: actor?.email,
             action: 'FILE_UPLOADED', objectId: object_id, result: 'allowed', request: req,
             metadata: { file_name: obj.name, folder_path }
+        })
+
+        void emitVaultEvent({
+            type: 'file:created',
+            workspaceId: workspace_id,
+            actorUserId: session.userId,
+            actorName: actor?.name,
+            actorEmail: actor?.email,
+            timestamp: new Date().toISOString(),
+            objectId: object_id,
+            name: obj.name,
+            sizeBytes: effectiveSize ?? obj.size_bytes ?? 0,
+            mimeType: obj.mime_type,
+            folderPath: folder_path,
+            parentId: obj.parent_id,
         })
 
         return NextResponse.json(updated)

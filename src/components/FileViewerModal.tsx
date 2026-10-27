@@ -16,6 +16,7 @@ import {
 import ExcelViewer from './viewers/ExcelViewer'
 import WordViewer from './viewers/WordViewer'
 import EpubViewer from './viewers/EpubViewer'
+import { getFileActions } from '@/lib/file-actions'
 
 export function LinkIcon() {
     return (
@@ -38,6 +39,14 @@ export function FileViewerModal({ item, workspaceId, onClose, onDownload, folder
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [copied, setCopied] = useState(false)
+
+    const viewerActions = getFileActions({
+        item,
+        workspaceId,
+        isAdmin: false,
+        folderPath,
+        onClose,
+    }, 'viewer')
 
     const supported = isSupported(item)
     // 50 MB soft cap — Excel/Word are also subject to this
@@ -104,6 +113,25 @@ export function FileViewerModal({ item, workspaceId, onClose, onDownload, folder
                         )}
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {viewerActions.map((action) => (
+                            <button
+                                key={action.id}
+                                className={`btn btn-secondary btn-sm ${action.variant === 'danger' ? 'btn-danger' : ''}`}
+                                onClick={() => {
+                                    void action.onClick({
+                                        item,
+                                        workspaceId,
+                                        isAdmin: false,
+                                        folderPath,
+                                        onClose,
+                                    })
+                                }}
+                                title={action.label}
+                            >
+                                {action.icon && <span style={{ marginRight: action.label ? '0.25rem' : 0 }}>{action.icon}</span>}
+                                {action.label}
+                            </button>
+                        ))}
                         <button className="btn btn-secondary btn-sm" onClick={copyLink} title="Copy link to this file">
                             {copied ? 'Copied!' : <LinkIcon />}
                         </button>

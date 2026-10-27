@@ -220,6 +220,8 @@ function ObjectSummary({ e }: { e: AuditEvent }) {
             return <ObjectFile icon="👁️" filename={filename} />
         case 'FILE_LINK_COPIED':
             return <ObjectFile icon="🔗" filename={filename} />
+        case 'FILE_SHARED_SLACK':
+            return <ObjectFile icon="💬" filename={filename} />
         case 'FOLDER_CREATED':
         case 'FOLDER_DELETED':
             return <ObjectFile icon="📁" filename={md.folder_name as string | undefined} />

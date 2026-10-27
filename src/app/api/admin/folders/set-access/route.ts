@@ -3,6 +3,7 @@ import { requireSession, requireMembership } from '@/lib/auth'
 import { getAdminClient } from '@/db'
 import { setFolderAccessSchema } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
+import { emitVaultEvent } from '@/lib/events'
 import { z } from 'zod'
 
 export async function POST(req: NextRequest) {
@@ -35,6 +36,19 @@ export async function POST(req: NextRequest) {
             workspaceId: workspace_id, actorUserId: session.userId, actorName: actor?.name, actorEmail: actor?.email,
             action: 'FOLDER_ACCESS_CHANGED', objectId: folder_id,
             result: 'allowed', metadata: { folder_name: folder?.name, allow_users, allow_groups }, request: req,
+        })
+
+        void emitVaultEvent({
+            type: 'folder:access_updated',
+            workspaceId: workspace_id,
+            actorUserId: session.userId,
+            actorName: actor?.name,
+            actorEmail: actor?.email,
+            timestamp: new Date().toISOString(),
+            folderId: folder_id,
+            folderName: folder?.name,
+            allowUsers: allow_users,
+            allowGroups: allow_groups,
         })
         return NextResponse.json({ success: true })
     } catch (err) {

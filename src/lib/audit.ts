@@ -25,6 +25,7 @@ export type AuditAction =
     | 'FILE_DOWNLOADED'
     | 'FILE_VIEWED'
     | 'FILE_LINK_COPIED'
+    | 'FILE_SHARED_SLACK'
     | 'AUTH_LOGOUT'
     | 'DESKTOP_LOGIN'
     | 'DEVICE_REGISTERED'

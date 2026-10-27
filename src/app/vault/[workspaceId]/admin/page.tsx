@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import UsersTab from './tabs/UsersTab'
 import InvitedTab from './tabs/InvitedTab'
 import GroupsTab from './tabs/GroupsTab'
@@ -8,10 +8,13 @@ import FolderAccessTab from './tabs/FolderAccessTab'
 import AuditLogTab from './tabs/AuditLogTab'
 import SettingsTab from './tabs/SettingsTab'
 import VerifiedLogTab from './tabs/VerifiedLogTab'
+import SlackIntegrationsTab from './tabs/SlackIntegrationsTab'
 
-type Tab = 'users' | 'invited' | 'groups' | 'access' | 'audit' | 'verified' | 'settings'
+type Tab = 'users' | 'invited' | 'groups' | 'access' | 'audit' | 'verified' | 'settings' | 'integrations'
 
-const TAB_LABELS: Record<Tab, string> = {
+const isCommercial = process.env.NEXT_PUBLIC_COMMERCIAL_MODE === 'true'
+
+const TAB_LABELS: Partial<Record<Tab, string>> = {
     users: 'Users',
     invited: 'Invited',
     groups: 'Groups',
@@ -19,6 +22,7 @@ const TAB_LABELS: Record<Tab, string> = {
     audit: 'Audit Log',
     verified: 'Verified Log',
     settings: 'Settings',
+    ...(isCommercial ? { integrations: 'Slack Integration' } : {}),
 }
 
 function TabButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -45,8 +49,10 @@ function TabButton({ label, active, onClick }: { label: string; active: boolean;
 
 export default function AdminPage() {
     const params = useParams()
+    const searchParams = useSearchParams()
     const workspaceId = params?.workspaceId as string
-    const [tab, setTab] = useState<Tab>('users')
+    const initialTab = searchParams.get('tab') as Tab
+    const [tab, setTab] = useState<Tab>(initialTab && initialTab in TAB_LABELS ? initialTab : 'users')
     const [roleCheck, setRoleCheck] = useState<'loading' | 'admin' | 'denied'>('loading')
 
     useEffect(() => {
@@ -101,7 +107,7 @@ export default function AdminPage() {
             <div className="content">
                 <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem', background: 'var(--surface)', borderRadius: 'var(--radius) var(--radius) 0 0', padding: '0 0.5rem', overflowX: 'auto' }}>
                     {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
-                        <TabButton key={t} label={TAB_LABELS[t]} active={tab === t} onClick={() => setTab(t)} />
+                        <TabButton key={t} label={TAB_LABELS[t]!} active={tab === t} onClick={() => setTab(t)} />
                     ))}
                 </div>
 
@@ -118,6 +124,7 @@ export default function AdminPage() {
                         {tab === 'audit' && <AuditLogTab workspaceId={workspaceId} />}
                         {tab === 'verified' && <VerifiedLogTab workspaceId={workspaceId} />}
                         {tab === 'settings' && <SettingsTab workspaceId={workspaceId} />}
+                        {tab === 'integrations' && <SlackIntegrationsTab workspaceId={workspaceId} />}
                     </>
                 )}
             </div>

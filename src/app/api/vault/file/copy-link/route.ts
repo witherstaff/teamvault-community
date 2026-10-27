@@ -4,6 +4,7 @@ import { requireSameWorkspace } from '@/lib/access'
 import { getAdminClient } from '@/db'
 import { logAuditEvent } from '@/lib/audit'
 import { resolveFolderPath } from '@/lib/folder-path'
+import { emitVaultEvent } from '@/lib/events'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -45,6 +46,18 @@ export async function POST(req: NextRequest) {
             result: 'allowed',
             metadata: { filename: obj.name, folder_path },
             request: req,
+        })
+
+        void emitVaultEvent({
+            type: 'file:link_copied',
+            workspaceId: workspace_id,
+            actorUserId: session.userId,
+            actorName: actor?.name,
+            actorEmail: actor?.email,
+            timestamp: new Date().toISOString(),
+            objectId: object_id,
+            name: obj.name,
+            folderPath: folder_path,
         })
 
         return NextResponse.json({ ok: true })
